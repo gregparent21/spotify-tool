@@ -159,14 +159,22 @@ def run():
                     sp.start_playback()
                     print("Resumed playback.")
                 except spotipy.SpotifyException as e:
-                    print_api_error(e, "resume playback")
+                    try:
+                        sp.pause_playback()
+                    except:
+                        print("Paused.")
+                        # print_api_error(e, "resume playback")
 
             elif choice == "3":
                 try:
                     sp.pause_playback()
                     print("Paused.")
                 except spotipy.SpotifyException as e:
-                    print_api_error(e, "pause")
+                    try:
+                        sp.start_playback()
+                    except:
+                        print("Resumed playback.")
+                        # print_api_error(e, "pause")
 
             elif choice == "4":
                 try:
