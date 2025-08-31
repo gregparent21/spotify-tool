@@ -1,102 +1,124 @@
 # Spotify Terminal CLI (Python)
 
-Control your Spotify playback from the terminal: play/pause, next/prev, volume, shuffle, repeat, manage devices, add to queue, and even search + play.
+Control your Spotify playback straight from your terminal with an interactive menu.  
+Pick commands by number (play/pause, skip, volume, shuffle, search, etc.) — no need to re-run Python with arguments each time.
 
-> **Requires Spotify Premium** for playback controls via the Web API.
+> ⚠️ **Spotify Premium is required** for playback control via the Web API.
+
+---
 
 ## Features
-- List & switch **devices**
-- **Play / pause / resume** & **skip** tracks
-- **Add to queue**
-- Toggle **shuffle** and set **repeat**
-- Set **volume**
-- Show a nice **now playing** status line
-- **Search & play** (top result) by query
+- Always-on **menu interface**  
+- Show **now playing** status (track, artist, device, progress)  
+- **Play / pause / resume**  
+- **Next / previous** track  
+- **Add to queue**  
+- **Shuffle** on/off/toggle  
+- **Repeat** off/context/track  
+- **Set volume** (0–100)  
+- List & **switch devices**  
+- Play by **Spotify URI/URL**  
+- **Search** for tracks, albums, artists, or playlists and play by selection  
 
-## Quick Start (macOS/Linux/Windows)
+---
 
-1) **Create a Spotify Developer App**
-   - Go to <https://developer.spotify.com/dashboard>
-   - Create an app (any name), then add a Redirect URI: `http://localhost:8080/callback`
-   - Copy the **Client ID** and **Client Secret**
+## Setup
 
-2) **Clone or download this folder**
+### 1. Create a Spotify Developer App
+1. Go to <https://developer.spotify.com/dashboard>
+2. Create a new app (any name is fine).
+3. Add a **Redirect URI**:  
+   ```
+   http://127.0.0.1:8080/callback
+   ```
+   (Spotify no longer accepts `localhost`; you must use `127.0.0.1`)
 
-3) **Create a virtualenv (recommended) and install deps**
+4. Copy your **Client ID** and **Client Secret**.
+
+---
+
+### 2. Clone or download this repo
+
+```bash
+git clone https://github.com/yourname/spotify-terminal-cli.git
+cd spotify-terminal-cli
+```
+
+---
+
+### 3. Create a virtual environment & install dependencies
+
 ```bash
 python3 -m venv .venv
-source .venv/bin/activate    # Windows: .venv\Scripts\activate
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-4) **Set environment variables**
-- Option A: export in your shell
-```bash
-export SPOTIPY_CLIENT_ID="YOUR_CLIENT_ID"
-export SPOTIPY_CLIENT_SECRET="YOUR_CLIENT_SECRET"
-export SPOTIPY_REDIRECT_URI="http://localhost:8080/callback"
-```
-- Option B: copy `.env.example` to `.env` and fill values, then run with `python -m dotenv -f .env run -- python spotify_cli.py ...`
+---
 
-5) **Authorize once (opens browser)**
-```bash
-python spotify_cli.py devices
-```
-This will open a browser to log in and grant access; token is cached at `~/.config/spotify-cli/.cache`.
+### 4. Configure environment variables
 
-## Examples
-```bash
-# Show devices and the active one
-python spotify_cli.py devices
+Copy `.env.example` → `.env` and fill in your credentials:
 
-# Transfer playback to a device (by name or id)
-python spotify_cli.py device set "Greg’s MacBook Pro"
-
-# Resume or start playback
-python spotify_cli.py play
-
-# Play a specific track/album/playlist URI or URL
-python spotify_cli.py play --uri spotify:track:1v3lG…
-python spotify_cli.py play --uri https://open.spotify.com/track/1v3lG…
-
-# Pause, next, previous
-python spotify_cli.py pause
-python spotify_cli.py next
-python spotify_cli.py prev
-
-# Add to queue
-python spotify_cli.py queue add spotify:track:…
-
-# Shuffle / Repeat
-python spotify_cli.py shuffle on
-python spotify_cli.py repeat context     # off | context | track
-
-# Volume (0–100)
-python spotify_cli.py volume 35
-
-# Now playing
-python spotify_cli.py status
-
-# Search & play first matching track
-python spotify_cli.py search "mr brightside"
-python spotify_cli.py search "taylor swift cruel summer" --type track --play
-
-# Optionally specify a device for commands that start playback
-python spotify_cli.py play --device "Living Room"
-python spotify_cli.py search "random access memories" --type album --play --device "MacBook"
+```env
+SPOTIPY_CLIENT_ID=your_client_id_here
+SPOTIPY_CLIENT_SECRET=your_client_secret_here
+SPOTIPY_REDIRECT_URI=http://127.0.0.1:8080/callback
 ```
 
-## Scopes requested
-- `user-read-playback-state`
-- `user-modify-playback-state`
-- `user-read-currently-playing`
+> The value of `SPOTIPY_REDIRECT_URI` must **exactly match** what you registered on the Spotify Developer Dashboard.
+
+---
+
+### 5. First run
+
+```bash
+python spotify_menu.py
+```
+
+On first run, your browser will open to authorize the app. A token will be cached at:
+```
+~/.config/spotify-cli/.cache
+```
+
+---
+
+## Usage
+
+When you run `spotify_menu.py`, you’ll see a menu like:
+
+```
+=== Spotify Terminal Controller ===
+ 1) Status (now playing)
+ 2) Play / Resume
+ 3) Pause
+ 4) Next track
+ 5) Previous track
+ 6) Add to queue
+ 7) Volume 0–100
+ 8) Shuffle on/off/toggle
+ 9) Repeat off/context/track
+10) Devices (list)
+11) Switch device
+12) Play a specific URI/URL
+13) Search & (optionally) play
+14) Refresh
+15) Quit
+```
+
+Just type the number, hit Enter, and follow any prompts. Example:
+- `13` → enter `"taylor swift cruel summer"` → choose from results.
+- `7` → enter `40` → sets volume to 40%.  
+- `11` → lists devices → pick the number to transfer playback.
+
+Press **Ctrl+C** or choose `15) Quit` to exit.
+
+---
 
 ## Notes
-- For **playback control**, Spotify requires **Premium**.
-- Make sure the Spotify app is open on at least one device when transferring playback.
-- On first run, a browser will open to authorize and cache your token locally.
-- To re-auth, delete the cache file at `~/.config/spotify-cli/.cache`.
-
-## Uninstall / Cleanup
-- Deactivate and remove the virtual environment
-- Delete `~/.config/spotify-cli/.cache` to clear tokens
+- **Playback control requires Spotify Premium.**
+- The Spotify app must be open on at least one device (phone, desktop, web).
+- To re-authenticate, delete the cache file:  
+  ```
+  rm ~/.config/spotify-cli/.cache
+  ```
