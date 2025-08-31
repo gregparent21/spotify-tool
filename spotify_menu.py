@@ -267,34 +267,82 @@ def run():
                 except spotipy.SpotifyException as e:
                     print_api_error(e, "search")
                     continue
+
                 items_key = t + "s"
                 items = res.get(items_key, {}).get("items", [])
                 if not items:
                     print("No results.")
                     continue
+
+                # Show results
                 for i, it in enumerate(items, start=1):
                     if t == "track":
                         artists = ", ".join(a["name"] for a in it["artists"])
                         print(f"{i:2d}. {it['name']} — {artists}  ({it['uri']})")
                     else:
                         print(f"{i:2d}. {it['name']}  ({it['uri']})")
-                play = prompt("Play # (or Enter to skip): ").strip()
-                if play:
+
+                sel = prompt("Select result # (Enter to cancel): ").strip()
+                if not sel:
+                    continue
+                try:
+                    idx = int(sel) - 1
+                    if idx < 0 or idx >= len(items):
+                        print("[!] Invalid selection.")
+                        continue
+                except ValueError:
+                    print("[!] Enter a number.")
+                    continue
+
+                chosen = items[idx]
+                uri = chosen["uri"]
+
+                # Second step: choose action
+                print("\nWhat do you want to do with this selection?")
+                print(" 1) Play")
+                print(" 2) Add to queue")
+                act = prompt("Choose 1/2 (Enter to cancel): ").strip()
+                if not act:
+                    continue
+
+                if act == "1":
                     try:
-                        idx = int(play) - 1
-                        if idx < 0 or idx >= len(items):
-                            print("[!] Invalid selection.")
+                        if t == "track":
+                            sp.start_playback(uris=[uri])
                         else:
-                            uri = items[idx]["uri"]
-                            if t == "track":
-                                sp.start_playback(uris=[uri])
-                            else:
-                                sp.start_playback(context_uri=uri)
-                            print("Playing selection.")
-                    except ValueError:
-                        print("[!] Enter a number.")
+                            sp.start_playback(context_uri=uri)
+                        print("Playing selection.")
                     except spotipy.SpotifyException as e:
                         print_api_error(e, "start playback from search")
+
+                elif act == "2":
+                    # If it’s a track, queue directly. Otherwise, auto re-search for a top track and queue that.
+                    if t == "track":
+                        try:
+                            sp.add_to_queue(uri)
+                            name = chosen.get("name", "track")
+                            artists = ", ".join(a["name"] for a in chosen.get("artists", []))
+                            print(f"Added to queue: {name} — {artists}")
+                        except spotipy.SpotifyException as e:
+                            print_api_error(e, "add to queue from search")
+                    else:
+                        # Auto re-search for a track using the same query q and queue the top result
+                        try:
+                            track_res = sp.search(q=q, type="track", limit=1)
+                            top = track_res.get("tracks", {}).get("items", [])
+                            if not top:
+                                print("[!] No track results found to queue for this query.")
+                                continue
+                            top_track = top[0]
+                            sp.add_to_queue(top_track["uri"])
+                            t_name = top_track.get("name", "track")
+                            t_artists = ", ".join(a["name"] for a in top_track.get("artists", []))
+                            print(f"Added to queue (top track for query): {t_name} — {t_artists}")
+                        except spotipy.SpotifyException as e:
+                            print_api_error(e, "auto-queue top track from query")
+                else:
+                    print("[!] Unknown choice.")
+
 
             elif choice == "14":
                 # Just loop to refresh
